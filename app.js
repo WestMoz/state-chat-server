@@ -29,7 +29,8 @@ const pool = sql.createPool({
   password: process.env.password,
 });
 
-//get user profile
+//get user profile*****
+//get current user profile
 //get posts by user
 //get posts by rank
 //get avatar url*****
@@ -38,6 +39,7 @@ const pool = sql.createPool({
 //create post****
 //create comment****
 
+//gets all posts from specific state
 app.post('/get-posts-by-state', authorizeUser, async (req, resp) => {
   console.log('get posts by state hit');
   try {
@@ -57,6 +59,7 @@ app.post('/get-posts-by-state', authorizeUser, async (req, resp) => {
   }
 });
 
+//gets avatar img url from s3 for current signed in user
 app.post('/get-avatar-url', authorizeUser, async (req, resp) => {
   console.log('get avatar url hit');
   try {
@@ -88,11 +91,32 @@ app.post('/get-avatar-url', authorizeUser, async (req, resp) => {
   }
 });
 
+//gets user data of specified user (not signed in user)
+app.post('/get-user', authorizeUser, async (req, resp) => {
+  try {
+    const username = req.body.username;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.users FROM username=?',
+      [username],
+    );
+    conn.release();
+
+    resp.status(200).send(response[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+//creates user after user has confirmed aws code
 app.post('/create-user', authorizeUser, async (req, resp) => {
   console.log('create user hit');
   try {
     const username = req.decodedToken['cognito:username'];
-    const avatar = 'default/DefaultAvatar.png'; //will need to create user with default avatar
+    const avatar = 'default/DefaultAvatar.png';
+    //will need to create user with default avatar
     const email = req.decodedToken.email;
     const state = '';
 
@@ -110,18 +134,20 @@ app.post('/create-user', authorizeUser, async (req, resp) => {
   }
 });
 
+//creates post with passed info and adds current timestamp
 app.post('/create-post', authorizeUser, async (req, resp) => {
   console.log('create post hit');
   try {
     const creator = req.decodedToken['cognito:username'];
+    const title = req.body.title;
     const content = req.body.content;
     const category = req.body.category;
     const timestamp = Date.now();
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
-      'INSERT INTO stateChat.posts (creator, content, category, timestamp) VALUES (?,?,?,?)',
-      [creator, content, category, timestamp],
+      'INSERT INTO stateChat.posts (creator, title, content, category, timestamp) VALUES (?,?,?,?,?)',
+      [creator, content, title, category, timestamp],
     );
 
     conn.release();
@@ -132,6 +158,7 @@ app.post('/create-post', authorizeUser, async (req, resp) => {
   }
 });
 
+//creates comment on specific post and adds current timestamp
 app.post('/create-comment', authorizeUser, async (req, resp) => {
   console.log('create comment hit');
   try {

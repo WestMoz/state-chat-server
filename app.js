@@ -38,6 +38,28 @@ const pool = sql.createPool({
 //create user****
 //create post****
 //create comment****
+//get num comments
+
+//get number of comments for specific posts
+app.post('/get-num-comments', authorizeUser, async (req, resp) => {
+  console.log('get num comments hit');
+  try {
+    const postId = req.body.postId;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT COUNT(*) AS count FROM stateChat.comments WHERE postId=?',
+      [postId],
+    );
+    console.log(response[0]);
+
+    conn.release();
+    resp.status(200).send(response[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
 
 //gets all posts from specific state
 app.post('/get-posts-by-state', authorizeUser, async (req, resp) => {
@@ -50,6 +72,22 @@ app.post('/get-posts-by-state', authorizeUser, async (req, resp) => {
       'SELECT * FROM stateChat.posts WHERE state=?',
       [state],
     );
+    conn.release();
+
+    resp.status(200).send(response[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/get-all-posts', authorizeUser, async (req, resp) => {
+  console.log('get all posts hit');
+  try {
+    const conn = await pool.getConnection();
+
+    const response = await conn.execute('SELECT * FROM stateChat.posts');
+
     conn.release();
 
     resp.status(200).send(response[0]);

@@ -31,14 +31,14 @@ const pool = sql.createPool({
 
 //get user profile*****
 //get current user profile
-//get posts by user
+//get posts by user*****
 //get posts by rank
 //get avatar url*****
 //get posts by state****
 //create user****
 //create post****
 //create comment****
-//get num comments
+//get num comments******
 
 app.post('/delete-vote', authorizeUser, async (req, resp) => {
   console.log('delete vote hit');
@@ -117,6 +117,26 @@ app.post('/get-num-comments', authorizeUser, async (req, resp) => {
 
     conn.release();
     resp.status(200).send(response[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+//gets all posts from specific user
+app.post('/get-posts-by-user', authorizeUser, async (req, resp) => {
+  console.log('get posts by user hit');
+  try {
+    const creator = req.body.creator;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.posts WHERE creator=?',
+      [creator],
+    );
+    conn.release();
+
+    resp.status(200).send(response[0]);
   } catch (error) {
     console.log(error);
     resp.status(500).send({ message: error });

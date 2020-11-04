@@ -37,7 +37,7 @@ function authorizeUser(request, response, next) {
         console.log(error);
         return response.status(403).send(error);
       }
-      console.log('decoded token', decodedToken);
+      // console.log('decoded token', decodedToken);
       request.decodedToken = decodedToken;
       next();
     });

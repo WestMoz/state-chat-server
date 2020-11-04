@@ -40,6 +40,69 @@ const pool = sql.createPool({
 //create comment****
 //get num comments
 
+app.post('/delete-vote', authorizeUser, async (req, resp) => {
+  console.log('delete vote hit');
+  try {
+    const username = req.decodedToken['cognito:username'];
+    const postId = req.body.postId;
+
+    const conn = await pool.getConnection();
+    await conn.execute(
+      'DELETE FROM stateChat.likes WHERE likedByUser=? && postIdLiked=?',
+      [username, postId],
+    );
+    conn.release();
+
+    resp.status(200).send({ message: 'vote deleted' });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/vote', authorizeUser, async (req, resp) => {
+  console.log('vote hit');
+  try {
+    const username = req.decodedToken['cognito:username'];
+    const postId = req.body.postId;
+    const vote = req.body.vote;
+    console.log(vote);
+
+    const conn = await pool.getConnection();
+    await conn.execute(
+      'INSERT INTO stateChat.likes (likedByUser, postIdLiked, vote) VALUES (?,?,?)',
+      [username, postId, vote],
+    );
+    conn.release();
+
+    resp.status(200).send({ message: `post was voted as ${vote}` });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/get-is-liked', authorizeUser, async (req, resp) => {
+  console.log('get is liked hit');
+  try {
+    const username = req.decodedToken['cognito:username'];
+    const postId = req.body.postId;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.likes WHERE likedByUser=? && postIdLiked=?',
+      [username, postId],
+    );
+    conn.release();
+
+    console.log(response[0][0]);
+    resp.status(200).send(response[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 //get number of comments for specific posts
 app.post('/get-num-comments', authorizeUser, async (req, resp) => {
   console.log('get num comments hit');
@@ -51,7 +114,6 @@ app.post('/get-num-comments', authorizeUser, async (req, resp) => {
       'SELECT COUNT(*) AS count FROM stateChat.comments WHERE postId=?',
       [postId],
     );
-    console.log(response[0]);
 
     conn.release();
     resp.status(200).send(response[0][0]);
@@ -181,11 +243,13 @@ app.post('/create-post', authorizeUser, async (req, resp) => {
     const content = req.body.content;
     const category = req.body.category;
     const timestamp = Date.now();
+    console.log(title);
+    console.log(content);
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
       'INSERT INTO stateChat.posts (creator, title, content, category, timestamp) VALUES (?,?,?,?,?)',
-      [creator, content, title, category, timestamp],
+      [creator, title, content, category, timestamp],
     );
 
     conn.release();

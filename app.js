@@ -40,6 +40,28 @@ const pool = sql.createPool({
 //create comment****
 //get num comments******
 
+app.post('/get-num-votes', authorizeUser, async (req, resp) => {
+  console.log('get num votes hit');
+  try {
+    const postIdLiked = req.body.postId;
+    const vote = req.body.vote;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT COUNT(*) AS votes from stateChat.likes where postIdLiked=? and vote=?',
+      [postIdLiked, vote],
+    );
+
+    console.log('num votes resp: ', response[0][0]);
+
+    conn.release();
+    resp.status(200).send(response[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 app.post('/delete-vote', authorizeUser, async (req, resp) => {
   console.log('delete vote hit');
   try {
@@ -123,6 +145,45 @@ app.post('/get-num-comments', authorizeUser, async (req, resp) => {
   }
 });
 
+app.post('/get-comments-by-id', authorizeUser, async (req, resp) => {
+  console.log('get comments by id hit');
+  try {
+    const postId = req.body.postId;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.comments WHERE postId=?',
+      [postId],
+    );
+
+    conn.release();
+    resp.status(200).send(response[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+//get specific post
+app.post('/get-post-by-id', authorizeUser, async (req, resp) => {
+  console.log('get post by id hit');
+  try {
+    const postId = req.body.postId;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.posts WHERE postId=?',
+      [postId],
+    );
+
+    conn.release();
+    resp.status(200).send(response[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 //gets all posts from specific user
 app.post('/get-posts-by-user', authorizeUser, async (req, resp) => {
   console.log('get posts by user hit');
@@ -151,7 +212,7 @@ app.post('/get-posts-by-state', authorizeUser, async (req, resp) => {
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
-      'SELECT * FROM stateChat.posts WHERE state=?',
+      'SELECT * FROM stateChat.posts WHERE category=?',
       [state],
     );
     conn.release();

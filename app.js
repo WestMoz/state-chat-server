@@ -164,6 +164,26 @@ app.post('/get-comments-by-id', authorizeUser, async (req, resp) => {
   }
 });
 
+app.post('/search', authorizeUser, async (req, resp) => {
+  console.log('search hit');
+  try {
+    const search = req.body.search;
+    console.log(search);
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.posts WHERE title LIKE ?',
+      [`%${search}%`],
+    );
+
+    conn.release();
+    resp.status(200).send(response[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 //get specific post
 app.post('/get-post-by-id', authorizeUser, async (req, resp) => {
   console.log('get post by id hit');

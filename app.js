@@ -40,6 +40,28 @@ const pool = sql.createPool({
 //create comment****
 //get num comments******
 
+app.post('/get-s3-image', authorizeUser, async (req, resp) => {
+  console.log('get s3 image hit');
+  try {
+    const path = `public/${req.body.path}`;
+    const params = {
+      Bucket: 'statechatbucket145149-moz',
+      Key: path,
+      Expires: 60,
+    };
+
+    s3.getSignedUrl('getObject', params)
+      .then((url) => {
+        console.log(url);
+        resp.status(200).send(url);
+      })
+      .catch((err) => resp.status(500).send(err));
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 app.post('/get-num-votes', authorizeUser, async (req, resp) => {
   console.log('get num votes hit');
   try {
@@ -260,18 +282,38 @@ app.post('/get-all-posts', authorizeUser, async (req, resp) => {
   }
 });
 
+app.post('/update-avatar', authorizeUser, async (req, resp) => {
+  console.log('update avatar hit');
+  try {
+    const username = req.decodedToken['cognito:username'];
+    const avatar = req.body.avatarPath;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'UPDATE stateChat.users SET avatar=? WHERE username=?',
+      [avatar, username],
+    );
+    conn.release();
+    resp.status(200).send({ message: 'avatar pic updated' });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 //gets avatar img url from s3 for current signed in user
 app.post('/get-avatar-url', authorizeUser, async (req, resp) => {
   console.log('get avatar url hit');
   try {
-    const username = req.decodedToken['cognito:username'];
+    const user = req.body.user;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
       'SELECT avatar FROM stateChat.users WHERE username=?',
-      [username],
+      [user],
     );
     conn.release();
+    console.log(response[0][0].avatar);
     const avatarPath = `public/${response[0][0].avatar}`;
     const params = {
       Bucket: 'statechatbucket145149-moz',

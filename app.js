@@ -40,6 +40,18 @@ const pool = sql.createPool({
 //create comment****
 //get num comments******
 
+app.post('/get-trending-posts', authorizeUser, async (req, resp) => {
+  console.log('get trending posts');
+  try {
+    //sql query is in workbench
+    //i need to rename views
+    //query returns table with counts of comments and likes in their own columns
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 app.post('/get-s3-image', authorizeUser, async (req, resp) => {
   console.log('get s3 image hit');
   try {

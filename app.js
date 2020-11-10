@@ -50,9 +50,9 @@ app.post('/get-s3-image', authorizeUser, async (req, resp) => {
       Expires: 60,
     };
 
-    s3.getSignedUrl('getObject', params)
+    s3.getSignedUrlPromise('getObject', params)
       .then((url) => {
-        console.log(url);
+        // console.log(url);
         resp.status(200).send(url);
       })
       .catch((err) => resp.status(500).send(err));
@@ -386,13 +386,12 @@ app.post('/create-post', authorizeUser, async (req, resp) => {
     const content = req.body.content;
     const category = req.body.category;
     const timestamp = Date.now();
-    console.log(title);
-    console.log(content);
+    const image = req.body.image ? req.body.image : null;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
-      'INSERT INTO stateChat.posts (creator, title, content, category, timestamp) VALUES (?,?,?,?,?)',
-      [creator, title, content, category, timestamp],
+      'INSERT INTO stateChat.posts (creator, title, content, category, timestamp, image) VALUES (?,?,?,?,?,?)',
+      [creator, title, content, category, timestamp, image],
     );
 
     conn.release();

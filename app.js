@@ -40,9 +40,53 @@ const pool = sql.createPool({
 //create comment****
 //get num comments******
 
+app.post('/get-max-activity', authorizeUser, async (req, resp) => {
+  console.log('get max activity hit');
+  try {
+    const conn = await pool.getConnection();
+
+    const activityResp = await conn.execute(
+      'SELECT max(totalActivity) as max FROM stateChat.stateActivity',
+    );
+    conn.release();
+
+    resp.status(200).send(activityResp[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+//returns array of state and activity nums
+app.post('/get-state-activity', authorizeUser, async (req, resp) => {
+  console.log('get state activity hit');
+  try {
+    const conn = await pool.getConnection();
+
+    const activityResp = await conn.execute(
+      'SELECT * FROM stateChat.stateActivity',
+    );
+    conn.release();
+
+    resp.status(200).send(activityResp[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+//returns table of posts with total count of likes and comments the sorts by total count
 app.post('/get-trending-posts', authorizeUser, async (req, resp) => {
   console.log('get trending posts');
   try {
+    const conn = await pool.getConnection();
+    await conn.query('USE stateChat');
+    const response = await conn.execute(
+      'SELECT postId, creator, content, category, timestamp, title, image, (ifNull(likeCount,0) + ifnull(commentCount,0)) as totalCount from (SELECT * FROM (likesCountsJoin) left JOIN(SELECT commentCount, postId as postIdCommented FROM commentsView) as commentsCounts on likesCountsJoin.postId = commentsCounts.postIdCommented ) as newTable order by totalCount desc',
+    );
+
+    conn.release();
+    resp.status(200).send(response[0]);
     //sql query is in workbench
     //i need to rename views
     //query returns table with counts of comments and likes in their own columns

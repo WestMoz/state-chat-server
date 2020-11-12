@@ -40,6 +40,33 @@ const pool = sql.createPool({
 //create comment****
 //get num comments******
 
+app.post('/delete-post', authorizeUser, async (req, resp) => {
+  console.log('delete post hit');
+  try {
+    const username = req.decodedToken['cognito:username'];
+    const postId = req.body.postId;
+
+    const conn = await pool.getConnection();
+    await conn.execute('DELETE FROM stateChat.likes WHERE postIdLiked=?', [
+      postId,
+    ]);
+    await conn.execute('DELETE FROM stateChat.comments WHERE postId=?', [
+      postId,
+    ]);
+    await conn.execute(
+      'DELETE FROM stateChat.posts WHERE postId=? AND creator=?',
+      [postId, username],
+    );
+
+    conn.release();
+
+    resp.status(200).send({ message: 'Post deleted succesfully' });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 app.post('/get-max-activity', authorizeUser, async (req, resp) => {
   console.log('get max activity hit');
   try {
@@ -69,6 +96,46 @@ app.post('/get-state-activity', authorizeUser, async (req, resp) => {
     conn.release();
 
     resp.status(200).send(activityResp[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+//returns user's posts with comments and likes totals
+app.post('/get-user-posts-ranked', authorizeUser, async (req, resp) => {
+  console.log('get user posts ranked hit');
+  try {
+    const creator = req.body.creator;
+    const conn = await pool.getConnection();
+    await conn.query('USE stateChat');
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.postsWithTotals WHERE creator=?',
+      [creator],
+    );
+
+    conn.release();
+    resp.status(200).send(response[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+//gets posts from specific state ranked
+app.post('/get-state-posts-ranked', authorizeUser, async (req, resp) => {
+  console.log('get user posts ranked hit');
+  try {
+    const state = req.body.state;
+    const conn = await pool.getConnection();
+    await conn.query('USE stateChat');
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.postsWithTotals WHERE category=?',
+      [state],
+    );
+
+    conn.release();
+    resp.status(200).send(response[0]);
   } catch (error) {
     console.log(error);
     resp.status(500).send({ message: error });
@@ -129,8 +196,6 @@ app.post('/get-num-votes', authorizeUser, async (req, resp) => {
       'SELECT COUNT(*) AS votes from stateChat.likes where postIdLiked=? and vote=?',
       [postIdLiked, vote],
     );
-
-    console.log('num votes resp: ', response[0][0]);
 
     conn.release();
     resp.status(200).send(response[0][0]);
@@ -195,7 +260,6 @@ app.post('/get-is-liked', authorizeUser, async (req, resp) => {
     );
     conn.release();
 
-    console.log(response[0][0]);
     resp.status(200).send(response[0][0]);
   } catch (error) {
     console.log(error);
@@ -369,7 +433,7 @@ app.post('/get-avatar-url', authorizeUser, async (req, resp) => {
       [user],
     );
     conn.release();
-    console.log(response[0][0].avatar);
+
     const avatarPath = `public/${response[0][0].avatar}`;
     const params = {
       Bucket: 'statechatbucket145149-moz',

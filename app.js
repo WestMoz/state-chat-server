@@ -40,6 +40,157 @@ const pool = sql.createPool({
 //create comment****
 //get num comments******
 
+app.post('/get-num-notifications', authorizeUser, async (req, resp) => {
+  console.log('get num notifications hit');
+  try {
+    const username = req.decodedToken['cognito:username'];
+
+    const conn = await pool.getConnection();
+    const numResp = await conn.execute(
+      'SELECT COUNT(notificationId) as count FROM stateChat.notifications WHERE seen=? AND userFor=?',
+      [0, username],
+    );
+    conn.release();
+
+    resp.status(200).send(numResp[0][0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/get-followed', authorizeUser, async (req, resp) => {
+  console.log('get followed hit');
+  try {
+    // const username = req.decodedToken['cognito:username'];
+    const followedBy = req.body.followedBy;
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.followers WHERE followedBy=?',
+      [followedBy],
+    );
+
+    conn.release();
+
+    console.log(response[0]);
+
+    resp.status(200).send(response[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/get-notifications', authorizeUser, async (req, resp) => {
+  console.log('get notifications hit');
+  try {
+    const userFor = req.decodedToken['cognito:username'];
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.notifications WHERE userFor=?',
+      [userFor],
+    );
+
+    conn.release();
+
+    resp.status(200).send(response[0]);
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/create-notification', authorizeUser, async (req, resp) => {
+  console.log('create notification hit');
+  try {
+    const userFor = req.body.userFor;
+    const message = req.body.message;
+    const timestamp = Date.now();
+
+    const conn = await pool.getConnection();
+    await conn.execute(
+      'INSERT INTO stateChat.notifications (userFor, message, timestamp) VALUES (?,?,?)',
+      [userFor, message, timestamp],
+    );
+
+    conn.release();
+
+    resp.status(200).send({ message: 'notification succesfully created' });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/unfollow', authorizeUser, async (req, resp) => {
+  console.log('unfollow hit');
+  try {
+    const followed = req.body.user;
+    const followedBy = req.decodedToken['cognito:username'];
+
+    const conn = await pool.getConnection();
+    await conn.execute(
+      'DELETE FROM stateChat.followers WHERE followed=? AND followedBy=?',
+      [followed, followedBy],
+    );
+
+    conn.release();
+
+    resp.status(200).send({ message: 'user unfollowed' });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/follow', authorizeUser, async (req, resp) => {
+  console.log('follow hit');
+  try {
+    const followed = req.body.user;
+    const followedBy = req.decodedToken['cognito:username'];
+
+    const conn = await pool.getConnection();
+    await conn.execute(
+      'INSERT INTO stateChat.followers (followed, followedBy) VALUES (?,?)',
+      [followed, followedBy],
+    );
+
+    conn.release();
+
+    resp.status(200).send({ message: 'user followed' });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
+app.post('/get-is-followed', authorizeUser, async (req, resp) => {
+  console.log('get is followed hit');
+  try {
+    const followed = req.body.user;
+    const followedBy = req.decodedToken['cognito:username'];
+
+    const conn = await pool.getConnection();
+    const response = await conn.execute(
+      'SELECT * FROM stateChat.followers WHERE followed=? AND followedBy=?',
+      [followed, followedBy],
+    );
+
+    conn.release();
+
+    if (response[0].length > 0) {
+      resp.status(200).send(true);
+    } else {
+      resp.status(200).send(false);
+    }
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 app.post('/delete-post', authorizeUser, async (req, resp) => {
   console.log('delete post hit');
   try {
@@ -481,7 +632,7 @@ app.post('/create-user', authorizeUser, async (req, resp) => {
     const avatar = 'default/DefaultAvatar.png';
     //will need to create user with default avatar
     const email = req.decodedToken.email;
-    const state = '';
+    const state = req.body.state;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(

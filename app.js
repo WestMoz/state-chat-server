@@ -40,6 +40,25 @@ const pool = sql.createPool({
 //create comment****
 //get num comments******
 
+app.post('/mark-seen', authorizeUser, async (req, resp) => {
+  console.log('mark seen hit');
+  try {
+    const notificationId = req.body.notificationId;
+
+    const conn = await pool.getConnection();
+    await conn.execute(
+      'UPDATE stateChat.notifications SET seen=? WHERE notificationId=?',
+      [1, notificationId],
+    );
+    conn.release();
+
+    resp.status(200).send({ message: 'notification marked as seen' });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send({ message: error });
+  }
+});
+
 app.post('/get-num-notifications', authorizeUser, async (req, resp) => {
   console.log('get num notifications hit');
   try {

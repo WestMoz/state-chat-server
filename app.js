@@ -319,7 +319,7 @@ app.post('/get-trending-posts', authorizeUser, async (req, resp) => {
     const conn = await pool.getConnection();
     await conn.query('USE stateChat');
     const response = await conn.execute(
-      'SELECT postId, creator, content, category, timestamp, title, image, (ifNull(likeCount,0) + ifnull(commentCount,0)) as totalCount from (SELECT * FROM (likesCountsJoin) left JOIN(SELECT commentCount, postId as postIdCommented FROM commentsView) as commentsCounts on likesCountsJoin.postId = commentsCounts.postIdCommented ) as newTable order by totalCount desc',
+      'SELECT postId, creator, content, category, timestamp, title, image, (ifNull(likeCount,0) + ifnull(commentCount,0)) as totalCount from (SELECT * FROM (likesCountsJoin) left JOIN(SELECT commentCount, postId as postIdCommented FROM commentsView) as commentsCounts on likesCountsJoin.postId = commentsCounts.postIdCommented ) as newTable order by totalCount desc LIMIT 24',
     );
 
     conn.release();

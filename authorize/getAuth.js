@@ -1,9 +1,9 @@
 const jwt = require('jsonwebtoken');
 const jwkToPem = require('jwk-to-pem');
 
-function authorizeUser(request, response, next) {
+function authorizeGet(request, response, next) {
   // if (res) console.log(res.data);
-  if (request.body.token == null) {
+  if (request.query.token == null) {
     console.log('token is undefined');
     return response.status(401).send();
   }
@@ -33,7 +33,7 @@ function authorizeUser(request, response, next) {
   const jwkForIdToken = jwk.keys[0];
   const pem = jwkToPem(jwkForIdToken);
   try {
-    jwt.verify(request.body.token, pem, (error, decodedToken) => {
+    jwt.verify(request.query.token, pem, (error, decodedToken) => {
       if (error) {
         console.log(error);
         return response.status(403).send(error);
@@ -47,4 +47,4 @@ function authorizeUser(request, response, next) {
   }
 }
 
-module.exports = authorizeUser;
+module.exports = authorizeGet;

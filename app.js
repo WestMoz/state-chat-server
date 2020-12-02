@@ -5,6 +5,7 @@ const cors = require('cors');
 const { urlencoded, request, response } = require('express');
 const PORT = 4000;
 const authorizeUser = require('./authorize/functions');
+const authorizeGet = require('./authorize/getAuth');
 const aws = require('aws-sdk');
 // const serverless = require('serverless-http');
 // const { report } = require('process');
@@ -29,18 +30,8 @@ const pool = sql.createPool({
   password: process.env.password,
 });
 
-//get user profile*****
-//get current user profile
-//get posts by user*****
-//get posts by rank
-//get avatar url*****
-//get posts by state****
-//create user****
-//create post****
-//create comment****
-//get num comments******
-
-app.post('/mark-seen', authorizeUser, async (req, resp) => {
+//**** */
+app.put('/mark-seen', authorizeUser, async (req, resp) => {
   console.log('mark seen hit');
   try {
     const notificationId = req.body.notificationId;
@@ -59,10 +50,11 @@ app.post('/mark-seen', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-num-notifications', authorizeUser, async (req, resp) => {
+//**** */
+app.get('/get-num-notifications', async (req, resp) => {
   console.log('get num notifications hit');
   try {
-    const username = req.decodedToken['cognito:username'];
+    const username = req.query.username;
 
     const conn = await pool.getConnection();
     const numResp = await conn.execute(
@@ -78,11 +70,11 @@ app.post('/get-num-notifications', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-followed', authorizeUser, async (req, resp) => {
+//**** */
+app.get('/get-followed', async (req, resp) => {
   console.log('get followed hit');
   try {
-    // const username = req.decodedToken['cognito:username'];
-    const followedBy = req.body.followedBy;
+    const followedBy = req.query.followedBy;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -101,10 +93,13 @@ app.post('/get-followed', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-notifications', authorizeUser, async (req, resp) => {
+//***** */
+app.get('/get-notifications', async (req, resp) => {
   console.log('get notifications hit');
   try {
-    const userFor = req.decodedToken['cognito:username'];
+    // const userFor = req.decodedToken['cognito:username'];
+    const userFor = req.query.username;
+    console.log(req.query.username);
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -121,6 +116,7 @@ app.post('/get-notifications', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 app.post('/create-notification', authorizeUser, async (req, resp) => {
   console.log('create notification hit');
   try {
@@ -143,7 +139,8 @@ app.post('/create-notification', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/unfollow', authorizeUser, async (req, resp) => {
+//**** */
+app.put('/unfollow', authorizeUser, async (req, resp) => {
   console.log('unfollow hit');
   try {
     const followed = req.body.user;
@@ -164,6 +161,7 @@ app.post('/unfollow', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 app.post('/follow', authorizeUser, async (req, resp) => {
   console.log('follow hit');
   try {
@@ -185,11 +183,12 @@ app.post('/follow', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-is-followed', authorizeUser, async (req, resp) => {
+//**** */
+app.get('/get-is-followed', async (req, resp) => {
   console.log('get is followed hit');
   try {
-    const followed = req.body.user;
-    const followedBy = req.decodedToken['cognito:username'];
+    const followed = req.query.followed;
+    const followedBy = req.query.followedBy;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -237,7 +236,7 @@ app.post('/delete-post', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-max-activity', authorizeUser, async (req, resp) => {
+app.get('/get-max-activity', authorizeGet, async (req, resp) => {
   console.log('get max activity hit');
   try {
     const conn = await pool.getConnection();

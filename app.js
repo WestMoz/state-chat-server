@@ -3,12 +3,11 @@ const express = require('express');
 const sql = require('mysql2/promise');
 const cors = require('cors');
 const { urlencoded, request, response } = require('express');
-const PORT = 4000;
 const authorizeUser = require('./authorize/functions');
-const authorizeGet = require('./authorize/getAuth');
+const authorizeDelete = require('./authorize/authorizeDelete');
 const aws = require('aws-sdk');
-// const serverless = require('serverless-http');
-// const { report } = require('process');
+const serverless = require('serverless-http');
+const { report } = require('process');
 
 aws.config.setPromisesDependency();
 aws.config.update({
@@ -210,7 +209,7 @@ app.get('/get-is-followed', async (req, resp) => {
 });
 
 //**** */
-app.delete('/delete-post', authorizeGet, async (req, resp) => {
+app.delete('/delete-post', authorizeDelete, async (req, resp) => {
   console.log('delete post hit');
   try {
     const username = req.decodedToken['cognito:username'];
@@ -376,7 +375,7 @@ app.get('/get-num-votes', async (req, resp) => {
 });
 
 //**** */
-app.delete('/delete-vote', authorizeGet, async (req, resp) => {
+app.delete('/delete-vote', authorizeDelete, async (req, resp) => {
   console.log('delete vote hit');
   try {
     const username = req.decodedToken['cognito:username'];
@@ -728,4 +727,5 @@ app.post('/create-comment', authorizeUser, async (req, resp) => {
   }
 });
 
-app.listen(PORT, console.log(`app is listening on ${PORT}`));
+// app.listen(PORT, console.log(`app is listening on ${PORT}`));
+module.exports.handler = serverless(app);

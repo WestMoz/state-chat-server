@@ -209,11 +209,12 @@ app.get('/get-is-followed', async (req, resp) => {
   }
 });
 
-app.post('/delete-post', authorizeUser, async (req, resp) => {
+//**** */
+app.delete('/delete-post', authorizeGet, async (req, resp) => {
   console.log('delete post hit');
   try {
     const username = req.decodedToken['cognito:username'];
-    const postId = req.body.postId;
+    const postId = req.query.postId;
 
     const conn = await pool.getConnection();
     await conn.execute('DELETE FROM stateChat.likes WHERE postIdLiked=?', [
@@ -236,7 +237,8 @@ app.post('/delete-post', authorizeUser, async (req, resp) => {
   }
 });
 
-app.get('/get-max-activity', authorizeGet, async (req, resp) => {
+//*** */
+app.get('/get-max-activity', async (req, resp) => {
   console.log('get max activity hit');
   try {
     const conn = await pool.getConnection();
@@ -253,8 +255,9 @@ app.get('/get-max-activity', authorizeGet, async (req, resp) => {
   }
 });
 
+//**** */
 //returns array of state and activity nums
-app.post('/get-state-activity', authorizeUser, async (req, resp) => {
+app.get('/get-state-activity', async (req, resp) => {
   console.log('get state activity hit');
   try {
     const conn = await pool.getConnection();
@@ -271,13 +274,13 @@ app.post('/get-state-activity', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 //returns user's posts with comments and likes totals
-app.post('/get-user-posts-ranked', authorizeUser, async (req, resp) => {
+app.get('/get-user-posts-ranked', async (req, resp) => {
   console.log('get user posts ranked hit');
   try {
-    const creator = req.body.creator;
+    const creator = req.query.creator;
     const conn = await pool.getConnection();
-    await conn.query('USE stateChat');
     const response = await conn.execute(
       'SELECT * FROM stateChat.postsWithTotals WHERE creator=?',
       [creator],
@@ -291,13 +294,13 @@ app.post('/get-user-posts-ranked', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 //gets posts from specific state ranked
-app.post('/get-state-posts-ranked', authorizeUser, async (req, resp) => {
+app.get('/get-state-posts-ranked', async (req, resp) => {
   console.log('get user posts ranked hit');
   try {
-    const state = req.body.state;
+    const state = req.query.state;
     const conn = await pool.getConnection();
-    await conn.query('USE stateChat');
     const response = await conn.execute(
       'SELECT * FROM stateChat.postsWithTotals WHERE category=?',
       [state],
@@ -312,7 +315,7 @@ app.post('/get-state-posts-ranked', authorizeUser, async (req, resp) => {
 });
 
 //returns table of posts with total count of likes and comments the sorts by total count
-app.post('/get-trending-posts', authorizeUser, async (req, resp) => {
+app.get('/get-trending-posts', async (req, resp) => {
   console.log('get trending posts');
   try {
     const conn = await pool.getConnection();
@@ -323,8 +326,6 @@ app.post('/get-trending-posts', authorizeUser, async (req, resp) => {
 
     conn.release();
     resp.status(200).send(response[0]);
-    //sql query is in workbench
-    //i need to rename views
     //query returns table with counts of comments and likes in their own columns
   } catch (error) {
     console.log(error);
@@ -332,10 +333,10 @@ app.post('/get-trending-posts', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-s3-image', authorizeUser, async (req, resp) => {
+app.get('/get-s3-image', async (req, resp) => {
   console.log('get s3 image hit');
   try {
-    const path = `public/${req.body.path}`;
+    const path = `public/${req.query.path}`;
     const params = {
       Bucket: 'statechatbucket145149-moz',
       Key: path,
@@ -344,7 +345,6 @@ app.post('/get-s3-image', authorizeUser, async (req, resp) => {
 
     s3.getSignedUrlPromise('getObject', params)
       .then((url) => {
-        // console.log(url);
         resp.status(200).send(url);
       })
       .catch((err) => resp.status(500).send(err));
@@ -354,11 +354,12 @@ app.post('/get-s3-image', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-num-votes', authorizeUser, async (req, resp) => {
+//**** */
+app.get('/get-num-votes', async (req, resp) => {
   console.log('get num votes hit');
   try {
-    const postIdLiked = req.body.postId;
-    const vote = req.body.vote;
+    const postIdLiked = req.query.postId;
+    const vote = req.query.vote;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -374,11 +375,12 @@ app.post('/get-num-votes', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/delete-vote', authorizeUser, async (req, resp) => {
+//**** */
+app.delete('/delete-vote', authorizeGet, async (req, resp) => {
   console.log('delete vote hit');
   try {
     const username = req.decodedToken['cognito:username'];
-    const postId = req.body.postId;
+    const postId = req.query.postId;
 
     const conn = await pool.getConnection();
     await conn.execute(
@@ -394,13 +396,13 @@ app.post('/delete-vote', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 app.post('/vote', authorizeUser, async (req, resp) => {
   console.log('vote hit');
   try {
     const username = req.decodedToken['cognito:username'];
     const postId = req.body.postId;
     const vote = req.body.vote;
-    console.log(vote);
 
     const conn = await pool.getConnection();
     await conn.execute(
@@ -416,11 +418,12 @@ app.post('/vote', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-is-liked', authorizeUser, async (req, resp) => {
+//**** */
+app.get('/get-is-liked', async (req, resp) => {
   console.log('get is liked hit');
   try {
-    const username = req.decodedToken['cognito:username'];
-    const postId = req.body.postId;
+    const username = req.query.username;
+    const postId = req.query.postId;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -436,11 +439,12 @@ app.post('/get-is-liked', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 //get number of comments for specific posts
-app.post('/get-num-comments', authorizeUser, async (req, resp) => {
+app.get('/get-num-comments', async (req, resp) => {
   console.log('get num comments hit');
   try {
-    const postId = req.body.postId;
+    const postId = req.query.postId;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -456,10 +460,10 @@ app.post('/get-num-comments', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-comments-by-id', authorizeUser, async (req, resp) => {
+app.get('/get-comments-by-id', async (req, resp) => {
   console.log('get comments by id hit');
   try {
-    const postId = req.body.postId;
+    const postId = req.query.postId;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -495,11 +499,12 @@ app.post('/search', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 //get specific post
-app.post('/get-post-by-id', authorizeUser, async (req, resp) => {
+app.get('/get-post-by-id', async (req, resp) => {
   console.log('get post by id hit');
   try {
-    const postId = req.body.postId;
+    const postId = req.query.postId;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -515,11 +520,12 @@ app.post('/get-post-by-id', authorizeUser, async (req, resp) => {
   }
 });
 
+//*****NOT USED/ REPLACED BY GET RANKED */
 //gets all posts from specific user
-app.post('/get-posts-by-user', authorizeUser, async (req, resp) => {
+app.get('/get-posts-by-user', async (req, resp) => {
   console.log('get posts by user hit');
   try {
-    const creator = req.body.creator;
+    const creator = req.query.creator;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -535,11 +541,12 @@ app.post('/get-posts-by-user', authorizeUser, async (req, resp) => {
   }
 });
 
+//*****NOT USED/ REPLACED BY GET RANKED */
 //gets all posts from specific state
-app.post('/get-posts-by-state', authorizeUser, async (req, resp) => {
+app.get('/get-posts-by-state', async (req, resp) => {
   console.log('get posts by state hit');
   try {
-    const state = req.body.state;
+    const state = req.query.state;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -555,7 +562,8 @@ app.post('/get-posts-by-state', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/get-all-posts', authorizeUser, async (req, resp) => {
+//*****NOT USED/ REPLACED BY GET RANKED */
+app.get('/get-all-posts', async (req, resp) => {
   console.log('get all posts hit');
   try {
     const conn = await pool.getConnection();
@@ -571,17 +579,18 @@ app.post('/get-all-posts', authorizeUser, async (req, resp) => {
   }
 });
 
-app.post('/update-avatar', authorizeUser, async (req, resp) => {
+//**** */
+app.put('/update-avatar', authorizeUser, async (req, resp) => {
   console.log('update avatar hit');
   try {
     const username = req.decodedToken['cognito:username'];
     const avatar = req.body.avatarPath;
 
     const conn = await pool.getConnection();
-    const response = await conn.execute(
-      'UPDATE stateChat.users SET avatar=? WHERE username=?',
-      [avatar, username],
-    );
+    await conn.execute('UPDATE stateChat.users SET avatar=? WHERE username=?', [
+      avatar,
+      username,
+    ]);
     conn.release();
     resp.status(200).send({ message: 'avatar pic updated' });
   } catch (error) {
@@ -590,16 +599,17 @@ app.post('/update-avatar', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 //gets avatar img url from s3 for current signed in user
-app.post('/get-avatar-url', authorizeUser, async (req, resp) => {
+app.get('/get-avatar-url', async (req, resp) => {
   console.log('get avatar url hit');
   try {
-    const user = req.body.user;
+    const username = req.query.username;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
       'SELECT avatar FROM stateChat.users WHERE username=?',
-      [user],
+      [username],
     );
     conn.release();
 
@@ -623,10 +633,11 @@ app.post('/get-avatar-url', authorizeUser, async (req, resp) => {
   }
 });
 
+//****NOT USED */
 //gets user data of specified user (not signed in user)
-app.post('/get-user', authorizeUser, async (req, resp) => {
+app.get('/get-user', async (req, resp) => {
   try {
-    const username = req.body.username;
+    const username = req.query.username;
 
     const conn = await pool.getConnection();
     const response = await conn.execute(
@@ -642,6 +653,7 @@ app.post('/get-user', authorizeUser, async (req, resp) => {
   }
 });
 
+//**** */
 //creates user after user has confirmed aws code
 app.post('/create-user', authorizeUser, async (req, resp) => {
   console.log('create user hit');
@@ -666,6 +678,7 @@ app.post('/create-user', authorizeUser, async (req, resp) => {
   }
 });
 
+//***** */
 //creates post with passed info and adds current timestamp
 app.post('/create-post', authorizeUser, async (req, resp) => {
   console.log('create post hit');
@@ -678,7 +691,7 @@ app.post('/create-post', authorizeUser, async (req, resp) => {
     const image = req.body.image ? req.body.image : null;
 
     const conn = await pool.getConnection();
-    const response = await conn.execute(
+    await conn.execute(
       'INSERT INTO stateChat.posts (creator, title, content, category, timestamp, image) VALUES (?,?,?,?,?,?)',
       [creator, title, content, category, timestamp, image],
     );
@@ -691,6 +704,7 @@ app.post('/create-post', authorizeUser, async (req, resp) => {
   }
 });
 
+//***** */
 //creates comment on specific post and adds current timestamp
 app.post('/create-comment', authorizeUser, async (req, resp) => {
   console.log('create comment hit');
@@ -701,7 +715,7 @@ app.post('/create-comment', authorizeUser, async (req, resp) => {
     const timestamp = Date.now();
 
     const conn = await pool.getConnection();
-    const response = await conn.execute(
+    await conn.execute(
       'INSERT INTO stateChat.comments (creator, postId, comment, timestamp) VALUES (?,?,?,?)',
       [creator, postId, comment, timestamp],
     );
